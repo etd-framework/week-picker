@@ -1,5 +1,27 @@
-(function () {
-    var selector = '[data-weekpicker]', all = [];
+(function(factory) {
+    'use strict';
+
+    if (typeof define === 'function' && define.amd) {
+        // AMD is used - Register as an anonymous module.
+        define(['jquery'], factory);
+    } else {
+        // AMD is not used - Attempt to fetch dependencies from scope.
+        if (!jQuery) {
+            throw 'WeekPicker requires jQuery to be loaded first!';
+        } else {
+            factory(jQuery);
+        }
+    }
+
+}(function($) {
+    var all = [],
+        defaults = {
+            monthNames: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+            shortDayNames: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
+            week_start: 1,
+            months: 2,
+            hideOnSelect: true
+        };
 
     function clearWeekPickers(except) {
         var ii;
@@ -13,7 +35,7 @@
     function WeekPicker(element, options) {
         this.$el = $(element);
         this.proxy('show').proxy('ahead').proxy('hide').proxy('keyHandler').proxy('selectWeek');
-        var options = $.extend({}, $.fn.weekpicker.defaults, options);
+        var options = $.extend({}, defaults, options);
 
         if ((!!options.parse) || (!!options.format) || !this.detectNative()) {
             $.extend(this, options);
@@ -100,6 +122,8 @@
 
             $('.selected', this.$months).removeClass('selected');
             $('[date="' + week + '"]', this.$months).addClass('selected');
+
+            if(this.hideOnSelect) clearWeekPickers();
         },
 
         renderView:function () {
@@ -212,6 +236,16 @@
         update:function (s) {
             this.$target.val(s);
             this.$el.val(s).change();
+
+            // fire event
+            if(this.onChange instanceof Function) {
+                var dates = s.split("-");
+
+                this.onChange({
+                    start: dates[0],
+                    end: dates[1]
+                });
+            }
         },
 
         show:function (e) {
@@ -311,28 +345,14 @@
         }
     };
 
-    /* WEEK PICKER DEFINITION
-     * ============================ */
-    $(document).ready(function () {
-        $.fn.weekpicker = function (options) {
-            return this.each(function () {
-                new WeekPicker(this, options);
-            });
-        };
+    $('body').click(clearWeekPickers);
 
-        $(function () {
-            $(selector).weekpicker();
-            $('html').click(clearWeekPickers);
+    $.fn.weekpicker = function (options) {
+        return this.each(function () {
+            new WeekPicker(this, options);
         });
+    };
 
-        $.fn.weekpicker.WeekPicker = WeekPicker;
+    return WeekPicker;
 
-        $.fn.weekpicker.defaults = {
-            monthNames:["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-            shortDayNames:["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
-            week_start:0,
-            months:6
-        };
-
-    });
-}());
+}));
