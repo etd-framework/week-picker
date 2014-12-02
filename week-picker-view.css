@@ -15,6 +15,7 @@
     z-index: 900;
     padding-bottom: 4px;
     font-size: 10px;
+    line-height: 22px;
 }
 
 .weekpicker .head td, .weekpicker td.span0, .weekpicker .calendar .span1 {
@@ -34,6 +35,7 @@
 
 .weekpicker .calendar {
     padding: 5px;
+    margin: 10px;
 }
 
 .weekpicker .calendar td {
