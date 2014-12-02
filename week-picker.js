@@ -20,7 +20,8 @@
             shortDayNames: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
             week_start: 1,
             months: 2,
-            hideOnSelect: true
+            hideOnSelect: true,
+            startDate: new Date()
         };
 
     function clearWeekPickers(except) {
@@ -63,30 +64,30 @@
             this.setParams();
             var $nav = $('<div>').addClass('week-nav').append(this.nav(this.months));
 
-            this.calculateDates();
+            this.calculateDates(this.startDate);
 
             $calendar = $("<table>").addClass('calendar');
             this.$months = $('<tr>');
             $calendar.append(this.$months);
 
             this.$picker = $('<div>')
-                .click(function (e) {
-                    e.stopPropagation();
-                })
+              .click(function (e) {
+                  e.stopPropagation();
+              })
                 // Use this to prevent accidental text selection.
-                .mousedown(function (e) {
-                    e.preventDefault();
-                })
-                .addClass('weekpicker')
-                .append($nav, $calendar)
-                .insertAfter(this.$el);
+              .mousedown(function (e) {
+                  e.preventDefault();
+              })
+              .addClass('weekpicker dropdown-menu')
+              .append($nav, $calendar)
+              .insertAfter(this.$el);
 
             this.$el
-                .focus(this.show)
-                .click(this.show)
-                .change($.proxy(function () {
-                this.selectWeek();
-            }, this));
+              .focus(this.show)
+              .click(this.show)
+              .change($.proxy(function () {
+                  this.selectWeek();
+              }, this));
 
             this.selectWeek();
             this.hide();
@@ -118,15 +119,16 @@
 
                 if(this.hideOnSelect) clearWeekPickers();
             }, this)).hover(function (e) {
-                    $('.highlighted', this.$months).removeClass('highlighted');
-                    $(this).addClass('highlighted');
-                });
+                $('.highlighted', this.$months).removeClass('highlighted');
+                $(this).addClass('highlighted');
+            });
 
             $('.selected', this.$months).removeClass('selected');
             $('[date="' + week + '"]', this.$months).addClass('selected');
         },
 
         renderView:function () {
+            console.log(this.start);
             var dates = [
                     [this.rangeStart(this.start), this.mid, 999],
                     [this.mid_next, this.end, 999]
@@ -140,11 +142,11 @@
                 dates[c][2] = this.daysBetween(dates[c][0], dates[c][1]);
 
                 $col = $('<td>').addClass('month-col');
-                $monthDays = $('<table>');
+                $monthDays = $('<table>').addClass('table-condensed');
 
                 //Render head
                 $head = $("<tr>").addClass('head');
-                $head.append($('<td>'));
+                //$head.append($('<td>'));
                 for (var i = 0; i < this.shortDayNames.length; i++) {
                     tmp = $('<td>').addClass('dow');
                     tmp.text(this.shortDayNames[(i + this.week_start) % 7]);
@@ -163,21 +165,21 @@
                         row = $('<tr>').addClass('week');
 
                         //Print month label
-                        if (thisDay.getMonth() != prevMonth) {
-                            label = $('<td>');
+                        /*if (thisDay.getMonth() != prevMonth) {
+                         label = $('<td>');
 
-                            tmp = this.incrementDay(thisDay, 6);
-                            if (tmp.getMonth() == thisDay.getMonth()) {
-                                tmp = this.incrementDay(thisDay, 28);
-                                tmp = (tmp.getMonth() == thisDay.getMonth() ? 5 : 4);
-                                label.attr('rowspan', tmp);
-                                label.text(this.monthNames[thisDay.getMonth()] + '\n'
-                                    + thisDay.getFullYear().toString().substring(2, 4));
-                                label.addClass('week-label ' + box_class.replace('box', 'span'));
-                            }
+                         tmp = this.incrementDay(thisDay, 6);
+                         if (tmp.getMonth() == thisDay.getMonth()) {
+                         tmp = this.incrementDay(thisDay, 28);
+                         tmp = (tmp.getMonth() == thisDay.getMonth() ? 5 : 4);
+                         label.attr('rowspan', tmp);
+                         label.text(this.monthNames[thisDay.getMonth()] + '\n'
+                         + thisDay.getFullYear().toString().substring(2, 4));
+                         label.addClass('week-label ' + box_class.replace('box', 'span'));
+                         }
 
-                            row.append(label);
-                        }
+                         row.append(label);
+                         }*/
 
                         //Set week range
                         weekEnd = this.incrementDay(thisDay, 6);
@@ -225,12 +227,12 @@
 
         rangeStart:function (date) {
             return this.findClosest(this.week_start,
-                new Date(date.getFullYear(), date.getMonth()), -1);
+              new Date(date.getFullYear(), date.getMonth()), -1);
         },
 
         rangeEnd:function (date) {
             return this.findClosest((this.week_start - 1) % 7,
-                new Date(date.getFullYear(), date.getMonth() + 1, 0), 1);
+              new Date(date.getFullYear(), date.getMonth() + 1, 0), 1);
         },
 
         update:function (s) {
@@ -271,13 +273,13 @@
         keyHandler:function (e) {
             // Keyboard navigation shortcuts.
             switch (e.keyCode) {
-                case 9:
-                case 27:
-                case 13:
-                    this.hide();
-                    break;
-                default:
-                    return;
+            case 9:
+            case 27:
+            case 13:
+                this.hide();
+                break;
+            default:
+                return;
             }
             e.preventDefault();
         },
@@ -313,9 +315,9 @@
 
         nav:function (months) {
             var $subnav = $('<div>' +
-                '<span class="prev button">&larr; Previous </span> | ' +
-                ' <span class="next button">Next &rarr;</span>' +
-                '</div>');
+            '<span class="prev button">&larr; Previous </span> | ' +
+            ' <span class="next button">Next &rarr;</span>' +
+            '</div>');
 
             $('.prev', $subnav).click($.proxy(function(e) {
                 this.ahead(-months)
@@ -339,6 +341,7 @@
 
         calculateDates:function (date) {
             this.start = date ? date : new Date();
+
             this.mid = this.rangeEnd(new Date(this.start.getFullYear(), this.start.getMonth() + Math.ceil(this.months / 2), 0));
             this.mid_next = new Date(this.mid.getFullYear(), this.mid.getMonth(), this.mid.getDate() + 1);
             this.end = this.rangeEnd(new Date(this.start.getFullYear(), this.start.getMonth() + this.months, 0));
