@@ -1,354 +1,275 @@
-(function(factory) {
+(function(root, picker) {
     'use strict';
-
     if (typeof define === 'function' && define.amd) {
-        // AMD is used - Register as an anonymous module.
-        define(['jquery'], factory);
+        // AMD is used
+        define(['jquery', 'moment'], picker);
+
     } else {
-        // AMD is not used - Attempt to fetch dependencies from scope.
-        if (!jQuery) {
-            throw 'WeekPicker requires jQuery to be loaded first!';
-        } else {
-            factory(jQuery);
+        // use global variables
+        var jquery = root.jQuery,
+            moment = root.moment;
+
+        if (!jquery) {
+            throw new Error('WeekPicker requires jQuery to be loaded first!');
         }
+        if (!moment) {
+            throw new Error('WeekPicker requires moment.js to be loaded first!');
+        }
+        picker(jquery, moment);
     }
 
-}(function($) {
-    var all = [],
-        defaults = {
-            monthNames: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-            shortDayNames: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
-            week_start: 1,
-            months: 2,
-            hideOnSelect: true,
-            startDate: new Date()
+}(this, function($, moment) {
+    var _dayNames = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
+        _defaults = {
+            initialDate: moment(),
+            onChange: function(e) {
+                console.log(e);
+            }
         };
 
-    function clearWeekPickers(except) {
-        var ii;
-        for (ii = 0; ii < all.length; ii++) {
-            if (all[ii] != except) {
-                all[ii].hide();
-            }
-        }
+    // UTILS
+
+    function _clearTime(date) {
+        return date.startOf('day');
     }
 
-    function WeekPicker(element, options) {
-        this.$el = $(element);
-        this.proxy('show').proxy('ahead').proxy('hide').proxy('keyHandler').proxy('selectWeek');
-        var options = $.extend({}, defaults, options);
+    function _buildMonth(start, week, month) {
+        var weeks = [];
+        var
+            done = false,
+            date = start.clone(),
+            monthIndex = date.month(),
+            count = 0;
 
-        if ((!!options.parse) || (!!options.format) || !this.detectNative()) {
-            $.extend(this, options);
-            this.$el.data('weekpicker', this);
-            all.push(this);
-            this.init();
+        while (!done) {
+            weeks.push({
+                days: _buildWeek(date.clone(), month),
+                current: date.week() === week
+            });
+
+            date.add(1, "w");
+            done = count++ > 2 && monthIndex !== date.month();
+            monthIndex = date.month();
         }
+
+        return weeks;
+    }
+
+    function _buildWeek(date, month) {
+        var days = [];
+
+        for (var i = 0; i < 7; i++) {
+            days.push({
+                number: date.date(),
+                prevMonth: date.month() < month,
+                nextMonth: date.month() > month,
+                isToday: date.isSame(new Date(), "day"),
+                date: date
+            });
+
+            date = date.clone().add(1, "d");
+        }
+
+        return days;
+    }
+
+
+    // CLASS
+
+    function WeekPicker(el, options) {
+        this.$el = $(el);
+        this.$el.data('weekpicker', this);
+
+        this.options = $.extend({}, _defaults, options);
+        this._rendered = false;
+
+        this._init();
     }
 
     WeekPicker.prototype = {
-        detectNative:function (el) {
-            if (navigator.userAgent.match(/(iPad|iPhone); CPU(\ iPhone)? OS 5_\d/i)) {
-                // jQuery will only change the input type of a detached element.
-                var $marker = $('<span>').insertBefore(this.$el);
-                this.$el.detach().attr('type', 'date').insertAfter($marker);
-                $marker.remove();
 
-                return true;
-            }
+        _init: function() {
+            this
+                .proxy('show')
+                .proxy('hide')
+                .proxy('_prev')
+                .proxy('_next');
 
-            return false;
+            this._initialDate = _clearTime(this.options.initialDate || moment());
+            this._currentWeek = this._initialDate.week();
+            this._monthDate = this._initialDate.clone();
+            this._setDate(this._initialDate);
+
+            this._renderFrame();
+            this._attachEvents();
         },
 
-        init:function () {
-            this.setParams();
-            var $nav = $('<div>').addClass('week-nav').append(this.nav(this.months));
+        _setDate: function(date) {
+            date = _clearTime(date.clone().date(1).startOf('isoWeek'));
 
-            this.calculateDates(this.startDate);
+            this._currentDate = date;console.log('!!!', date);
+            this._currentMonth = this._monthDate.month();
+        },
 
-            $calendar = $("<table>").addClass('calendar');
-            this.$months = $('<tr>');
-            $calendar.append(this.$months);
+        _renderFrame: function() {
+            var prev = $('<div>').addClass('prev').text('‹'),
+                next = $('<div>').addClass('next').text('›'),
+                title = $('<span>').addClass('title');
 
-            this.$picker = $('<div>')
-              .click(function (e) {
-                  e.stopPropagation();
-              })
-                // Use this to prevent accidental text selection.
-              .mousedown(function (e) {
-                  e.preventDefault();
-              })
-              .addClass('weekpicker dropdown-menu')
-              .append($nav, $calendar)
-              .insertAfter(this.$el);
+            var controls = $('<div>').addClass('controls').append(prev, title, next);
 
-            this.$el
-              .focus(this.show)
-              .click(this.show)
-              .change($.proxy(function () {
-                  this.selectWeek();
-              }, this));
+            var days = $('<div>').addClass('weekpicker-days');
 
-            this.selectWeek();
+            this.$picker = $('<div>').addClass('weekpicker dropdown-menu')
+                .append(controls, days)
+                .insertAfter(this.$el);
+
+            this.$title = title;
+            this.$days = days;
+        },
+
+        _attachEvents: function() {
+            var me = this;
+
+            me.$el
+                .on('focus', $.proxy(me.show, me))
+                .on('click', $.proxy(me.show, me))
+                .on('change', $.proxy(me.selectWeek, me));
+
+            me.$picker
+                .on('click', function(e) { e.stopPropagation(); })
+                .on('mousedown', function(e) { e.stopPropagation(); })
+                .on('click', '.controls .prev', me._prev)
+                .on('click', '.controls .next', me._next)
+                .on('click', '.weekpicker-days tr', function() {
+                    me._select($(this));
+                });
+        },
+
+        _renderMonth: function() {
+            var weeks = _buildMonth(this._currentDate, this._currentWeek, this._currentMonth),
+                table = $('<table>').addClass('table-condenced'),
+                week, days, day, tr, td;
+
+            tr = $('<tr>');
+            for(var k = 0; k < 7; k++) {
+                tr.append($('<th>').text(_dayNames[k]));
+            }
+            table.append(tr);
+
+            for(var i = 0, si = weeks.length; i < si; i++) {
+                tr = $('<tr>');
+
+                week = weeks[i];
+                days = week.days;
+
+                if(week.current) {
+                    tr.addClass('selected');
+                }
+
+                tr.data('days', days);
+
+                for(var j = 0, sj = days.length; j < sj; j++) {
+                    day = days[j];
+
+                    td = $('<td>').text(day.number);
+
+                    if(day.prevMonth) {
+                        td.addClass('prev');
+                    }
+
+                    if(day.nextMonth) {
+                        td.addClass('next');
+                    }
+
+                    if(day.isToday) {
+                        td.addClass('today');
+                    }
+
+                    tr.append(td);
+                }
+
+                table.append(tr);
+            }
+
+            this.$days.html(table);
+            this.$title.text(this._monthDate.format("MMMM YYYY"));
+
+            this._rendered = true;
+        },
+
+        _prev: function() {
+            var previous = this._monthDate.clone();
+            this._monthDate.month(this._monthDate.month() - 1);
+            this._setDate(previous.month(previous.month() - 1));
+
+            this._renderMonth();
+        },
+
+        _next: function() {
+            var next = this._monthDate.clone();
+            this._monthDate.month(this._monthDate.month() + 1);
+            this._setDate(next.month(next.month() + 1));
+
+            this._renderMonth();
+        },
+
+        _select: function($el) {
+            var days = $el.data('days'),
+                start, end;
+
+            if(!days) return;
+
+            start = days[0].date;
+            end = days[6].date;
+
+            this._currentWeek = start.week();
+            this._renderMonth();
+
+            if(this.$el.is('input')) {
+                this.$el.val(start.format("DD/MM/YYYY") + " - " + end.format("DD/MM/YYYY"));
+            }
+
+            if(this.options.onChange instanceof Function) {
+                this.options.onChange({
+                    start: start,
+                    end: end
+                });
+            }
+
             this.hide();
         },
 
-        setParams:function () {
-            var data;
+        proxy: function(method) {
+            this[method] = $.proxy(this[method], this);
 
-            data = this.$el.attr('data-target');
-            this.$target = data ? $(data) : this.$el;
-
-            data = parseInt(this.$el.attr('data-months'));
-            this.months = data ? data : this.months;
-
-            data = parseInt(this.$el.attr('data-week_start'));
-            this.week_start = data ? data : this.week_start;
-        },
-
-        selectWeek:function (week) {
-            if (typeof(week) == "undefined") {
-                week = this.$target.val();
-            }
-
-            this.$months.empty();
-            this.renderView();
-
-            $('.week', this.$months).click($.proxy(function (e) {
-                this.update($(e.target).parent().attr("date"));
-
-                if(this.hideOnSelect) clearWeekPickers();
-            }, this)).hover(function (e) {
-                $('.highlighted', this.$months).removeClass('highlighted');
-                $(this).addClass('highlighted');
-            });
-
-            $('.selected', this.$months).removeClass('selected');
-            $('[date="' + week + '"]', this.$months).addClass('selected');
-        },
-
-        renderView:function () {
-            console.log(this.start);
-            var dates = [
-                    [this.rangeStart(this.start), this.mid, 999],
-                    [this.mid_next, this.end, 999]
-                ],
-                thisDay, prevMonth = -1, weekEnd, tmp,
-                row, col, label, firstDay, box_class;
-
-            for (var c = 0; c < (this.months <= 1 ? 1 : 2); c++) {
-                var m = -1, w = 0;
-
-                dates[c][2] = this.daysBetween(dates[c][0], dates[c][1]);
-
-                $col = $('<td>').addClass('month-col');
-                $monthDays = $('<table>').addClass('table-condensed');
-
-                //Render head
-                $head = $("<tr>").addClass('head');
-                //$head.append($('<td>'));
-                for (var i = 0; i < this.shortDayNames.length; i++) {
-                    tmp = $('<td>').addClass('dow');
-                    tmp.text(this.shortDayNames[(i + this.week_start) % 7]);
-                    $head.append(tmp);
-                }
-                $monthDays.append($head);
-
-                //Render date cells with month label
-                for (var d = 0; d <= dates[c][2]; d++) {
-                    thisDay = this.incrementDay(dates[c][0], d);
-                    box_class = 'box' + (thisDay.getMonth() % 2);
-
-                    //Creating and append week in to month
-                    if (this.week_start == thisDay.getDay()) {
-                        firstDay = thisDay;
-                        row = $('<tr>').addClass('week');
-
-                        //Print month label
-                        /*if (thisDay.getMonth() != prevMonth) {
-                         label = $('<td>');
-
-                         tmp = this.incrementDay(thisDay, 6);
-                         if (tmp.getMonth() == thisDay.getMonth()) {
-                         tmp = this.incrementDay(thisDay, 28);
-                         tmp = (tmp.getMonth() == thisDay.getMonth() ? 5 : 4);
-                         label.attr('rowspan', tmp);
-                         label.text(this.monthNames[thisDay.getMonth()] + '\n'
-                         + thisDay.getFullYear().toString().substring(2, 4));
-                         label.addClass('week-label ' + box_class.replace('box', 'span'));
-                         }
-
-                         row.append(label);
-                         }*/
-
-                        //Set week range
-                        weekEnd = this.incrementDay(thisDay, 6);
-                        row.attr('date', this.formatWeek(thisDay, weekEnd));
-
-                        if (prevMonth != thisDay.getMonth()) {
-                            m = m + 1;
-                            prevMonth = thisDay.getMonth();
-                        }
-                    }
-
-                    //Append Day in to Week
-                    col = $('<td>').attr('date', this.format(thisDay));
-                    col.text(thisDay.getDate());
-                    col.addClass(box_class);
-                    row.append(col);
-
-                    if (d % 7 == 0) {
-                        $monthDays.append(row);
-                    }
-                }
-
-                $col.append($monthDays);
-
-                this.$months.append($col);
-            }
-        },
-
-        proxy:function (meth) {
-            this[meth] = $.proxy(this[meth], this);
             return this;
         },
 
-        daysBetween:function (start, end) {
-            var start = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
-            var end = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
-
-            return (end - start) / 86400000;
-        },
-
-        findClosest:function (dow, date, direction) {
-            var difference = direction * (Math.abs(date.getDay() - dow - (direction * 7)) % 7);
-            return new Date(date.getFullYear(), date.getMonth(), date.getDate() + difference);
-        },
-
-        rangeStart:function (date) {
-            return this.findClosest(this.week_start,
-              new Date(date.getFullYear(), date.getMonth()), -1);
-        },
-
-        rangeEnd:function (date) {
-            return this.findClosest((this.week_start - 1) % 7,
-              new Date(date.getFullYear(), date.getMonth() + 1, 0), 1);
-        },
-
-        update:function (s) {
-            this.$target.val(s);
-            this.$el.val(s).change();
-
-            // fire event
-            if(this.onChange instanceof Function) {
-                var dates = s.split("-");
-
-                this.onChange({
-                    start: dates[0],
-                    end: dates[1]
-                });
-            }
-        },
-
-        show:function (e) {
+        show: function(e) {
             e && e.stopPropagation();
 
-            clearWeekPickers(this);
+            if(!this._rendered) {
+                this._renderMonth();
+            }
 
             var offset = this.$el.offset();
 
-            this.$picker.css({
-                top:offset.top + this.$el.outerHeight() + 2,
-                left:offset.left
-            }).show();
+            this
+                .$picker
+                .css({
+                    top: offset.top + this.$el.outerHeight() + 2,
+                    left: offset.left
+                })
+                .show();
 
-            $('html').on('keydown', this.keyHandler);
+            $('body').one('click', this.hide);
         },
 
-        hide:function () {
+        hide: function() {
             this.$picker.hide();
-            $('html').off('keydown', this.keyHandler);
-        },
-
-        keyHandler:function (e) {
-            // Keyboard navigation shortcuts.
-            switch (e.keyCode) {
-            case 9:
-            case 27:
-            case 13:
-                this.hide();
-                break;
-            default:
-                return;
-            }
-            e.preventDefault();
-        },
-
-        parse:function (s) {
-            // Parse a partial RFC 3339 string into a Date.
-            var m;
-            if ((m = s.match(/^(\d{2,2})\/(\d{2,2})\/(\d{2,2})$/))) {
-                return new Date(m[0], m[1] - 1, m[2]);
-            } else {
-                return null;
-            }
-        },
-
-        format:function (date) {
-            // Format a Date into a string as specified by RFC 3339.
-            var month = (date.getMonth() + 1).toString(),
-                dom = date.getDate().toString();
-            if (month.length === 1) {
-                month = '0' + month;
-            }
-
-            if (dom.length === 1) {
-                dom = '0' + dom;
-            }
-
-            return month + "/" + dom + '/' + date.getFullYear().toString().substr(2, 2);
-        },
-
-        formatWeek:function (from, to) {
-            return this.format(from) + '-' + this.format(to);
-        },
-
-        nav:function (months) {
-            var $subnav = $('<div>' +
-            '<span class="prev button">&larr; Previous </span> | ' +
-            ' <span class="next button">Next &rarr;</span>' +
-            '</div>');
-
-            $('.prev', $subnav).click($.proxy(function(e) {
-                this.ahead(-months)
-            }, this));
-            $('.next', $subnav).click($.proxy(function(e) {
-                this.ahead(months)
-            }, this));
-
-            return $subnav;
-        },
-
-        incrementDay:function (d, i) {
-            return new Date(d.getFullYear(), d.getMonth(), d.getDate() + i, 12, 00);
-        },
-
-        ahead:function (months) {
-            var date = new Date(this.start.getFullYear(), this.start.getMonth() + months, 1);
-            this.calculateDates(date);
-            this.selectWeek();
-        },
-
-        calculateDates:function (date) {
-            this.start = date ? date : new Date();
-
-            this.mid = this.rangeEnd(new Date(this.start.getFullYear(), this.start.getMonth() + Math.ceil(this.months / 2), 0));
-            this.mid_next = new Date(this.mid.getFullYear(), this.mid.getMonth(), this.mid.getDate() + 1);
-            this.end = this.rangeEnd(new Date(this.start.getFullYear(), this.start.getMonth() + this.months, 0));
         }
     };
-
-    $('body').click(clearWeekPickers);
 
     $.fn.weekpicker = function (options) {
         return this.each(function () {

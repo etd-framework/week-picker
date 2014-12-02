@@ -1,6 +1,11 @@
 .weekpicker {
     padding: 4px;
     line-height: 22px;
+    width: 250px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 .weekpicker .head td, .weekpicker td.span0, .weekpicker .calendar .span1 {
@@ -67,4 +72,44 @@
     background-color: #428bca;
     color: #fff;
     text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+}
+
+.weekpicker .controls {
+    line-height: 30px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.weekpicker .controls .prev,
+.weekpicker .controls .next {
+    height: 30px;
+    width: 30px;
+}
+
+.weekpicker .controls .prev:hover,
+.weekpicker .controls .next:hover {
+    background-color: #ccc;
+    cursor: pointer;
+}
+
+.weekpicker .controls .prev {
+    float: left;
+}
+
+.weekpicker .controls .next {
+    float: right;
+}
+
+.weekpicker .weekpicker-days tr:hover td {
+    background-color: #ccc;
+    cursor: pointer;
+}
+
+.weekpicker .weekpicker-days tr.selected td {
+    background: red;
+}
+
+.weekpicker .weekpicker-days td.prev,
+.weekpicker .weekpicker-days td.next {
+    color: #999;
 }
