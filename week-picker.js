@@ -115,6 +115,8 @@
 
             $('.week', this.$months).click($.proxy(function (e) {
                 this.update($(e.target).parent().attr("date"));
+
+                if(this.hideOnSelect) clearWeekPickers();
             }, this)).hover(function (e) {
                     $('.highlighted', this.$months).removeClass('highlighted');
                     $(this).addClass('highlighted');
@@ -122,8 +124,6 @@
 
             $('.selected', this.$months).removeClass('selected');
             $('[date="' + week + '"]', this.$months).addClass('selected');
-
-            if(this.hideOnSelect) clearWeekPickers();
         },
 
         renderView:function () {
@@ -317,10 +317,10 @@
                 ' <span class="next button">Next &rarr;</span>' +
                 '</div>');
 
-            $('.prev', $subnav).click($.proxy(function () {
+            $('.prev', $subnav).click($.proxy(function(e) {
                 this.ahead(-months)
             }, this));
-            $('.next', $subnav).click($.proxy(function () {
+            $('.next', $subnav).click($.proxy(function(e) {
                 this.ahead(months)
             }, this));
 
