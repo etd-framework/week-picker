@@ -22,6 +22,7 @@
     var _dayNames = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
         _defaults = {
             initialDate: moment(),
+            endDate: null,
             onChange: function(e) {
                 console.log(e);
             }
@@ -33,7 +34,7 @@
         return date.startOf('day');
     }
 
-    function _buildMonth(start, week, month) {
+    function _buildMonth(start, week, month, dweek) {
         var weeks = [];
         var
             done = false,
@@ -43,11 +44,13 @@
 
         while (!done) {
             weeks.push({
+                number: date.week(),
                 days: _buildWeek(date.clone(), month),
-                current: date.week() === week
+                current: date.week() === week,
+                disabled: (dweek ? date.unix() >= dweek : false)
             });
 
-            date.add(1, "w");
+            date.add(1, "week");
             done = count++ > 2 && monthIndex !== date.month();
             monthIndex = date.month();
         }
@@ -56,18 +59,19 @@
     }
 
     function _buildWeek(date, month) {
-        var days = [];
+        var days = [],
+            today = new Date();
 
         for (var i = 0; i < 7; i++) {
             days.push({
                 number: date.date(),
                 prevMonth: date.month() < month,
                 nextMonth: date.month() > month,
-                isToday: date.isSame(new Date(), "day"),
+                isToday: date.isSame(today, "day"),
                 date: date
             });
 
-            date = date.clone().add(1, "d");
+            date = date.clone().add(1, "day");
         }
 
         return days;
@@ -98,7 +102,13 @@
             this._initialDate = _clearTime(this.options.initialDate || moment());
             this._currentWeek = this._initialDate.week();
             this._monthDate = this._initialDate.clone();
+            this._endDate = this.options.endDate ? this.options.endDate.isoWeek() : null;
             this._setDate(this._initialDate);
+
+            if(this.options.endDate) {
+                this._endDate = this.options.endDate.startOf('isoWeek');
+                this._endDate = this._endDate.unix();
+            }
 
             this._renderFrame();
             this._attachEvents();
@@ -107,7 +117,7 @@
         _setDate: function(date) {
             date = _clearTime(date.clone().date(1).startOf('isoWeek'));
 
-            this._currentDate = date;console.log('!!!', date);
+            this._currentDate = date;
             this._currentMonth = this._monthDate.month();
         },
 
@@ -147,8 +157,8 @@
         },
 
         _renderMonth: function() {
-            var weeks = _buildMonth(this._currentDate, this._currentWeek, this._currentMonth),
-                table = $('<table>').addClass('table-condenced'),
+            var weeks = _buildMonth(this._currentDate, this._currentWeek, this._currentMonth, this._endDate),
+                table = $('<table>').addClass('table-condensed'),
                 week, days, day, tr, td;
 
             tr = $('<tr>');
@@ -162,6 +172,9 @@
 
                 week = weeks[i];
                 days = week.days;
+
+                tr.addClass('week-' + week.number)
+                  .addClass(week.disabled ? 'disabled' : 'enabled');
 
                 if(week.current) {
                     tr.addClass('selected');
@@ -218,8 +231,8 @@
             var days = $el.data('days'),
                 start, end;
 
-            if(!days) return;
-
+            if($el.hasClass('disabled') || !days) return;
+            console.log('wefwefwef');
             start = days[0].date;
             end = days[6].date;
 

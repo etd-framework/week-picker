@@ -68,7 +68,8 @@ Markup:
 <script src="week-picker.js"></script>
 <script>
     $('#qweqw').weekpicker({
-        onSelect: function(week) {
+        endDate: moment().add(1, "week"),
+        onChange: function(week) {
             console.log('!!!!!!', week);
         }
     });
