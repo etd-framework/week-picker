@@ -232,7 +232,7 @@
                 start, end;
 
             if($el.hasClass('disabled') || !days) return;
-            console.log('wefwefwef');
+
             start = days[0].date;
             end = days[6].date;
 
