@@ -23,9 +23,7 @@
         _defaults = {
             initialDate: moment(),
             endDate: null,
-            onChange: function(e) {
-                console.log(e);
-            }
+            onChange: null
         };
 
     // UTILS
