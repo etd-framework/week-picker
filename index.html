@@ -7,9 +7,9 @@
     <meta name="author" content="Morshed Alam">
     <meta charset="UTF-8">
 
-    <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css" rel="stylesheet">
+    <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css" rel="stylesheet">
     <link href="week-picker.css" rel="stylesheet">
-    <link href="week-picker-view.css" rel="stylesheet"/>
+    <style>html,body{height:100%;}</style>
 </head>
 
 <body>
@@ -20,47 +20,16 @@
     <a href="https://github.com/morshedalam/week-picker/zipball/master" class="btn btn-mini">Download</a>
     <br/><br/>
 
-
-    <h4>Example</h4>
-
-    <p>A field with default options.</p>
-
     <div class="well">
-        <input data-weekpicker="weekpicker"/>
-        <xmp>Markup:
-<input data-weekpicker="weekpicker"/></xmp>
-    </div>
+        <h4>Example</h4>
+        <p>A field with default options.</p>
 
-    <p>Specifying number of months via data tag.</p>
+        <input id="qweqw">
 
-    <div class="well">
-        <input data-weekpicker="weekpicker" data-months="5"/>
-        <xmp>Markup:
-<input data-weekpicker="weekpicker" data-months="5"/></xmp>
-    </div>
-
-    <p>Specifying start of week via data tag.</p>
-
-    <div class="well">
-        <input id="qweqw" data-weekpicker="weekpicker" data-week_start="1"/>
-        <xmp>Markup:
-<input data-weekpicker="weekpicker" data-week_start="1"/></xmp>
-    </div>
-
-    <p>Using Icon.</p>
-
-    <div class="well">
-        <div class="input-append date" id="dp3" data-date="12-02-2012">
-            <input type="text" readonly="" id="week_range"/>
-        <span class="add-on" data-weekpicker="weekpicker"
-              data-target="#week_range"><i class="icon-th"></i></span>
-        </div>
-        <xmp>
-Markup:
-<input type="text" readonly="" id="week_range"/>
-<span class="add-on" data-weekpicker="weekpicker" data-target="#week_range">
-    <i class="icon-th"></i>
-</span></xmp>
+        <br><br>
+        <button id="prev" class="btn btn-primary">Prev</button>
+        <button id="next" class="btn btn-primary">Next</button>
+        <button id="current" class="btn btn-primary">Current</button>
     </div>
 </div>
 
@@ -68,11 +37,24 @@ Markup:
 <script src="http://momentjs.com/downloads/moment.js"></script>
 <script src="week-picker.js"></script>
 <script>
-    $('#qweqw').weekpicker({
-        endDate: moment().add(1, "week"),
+    var picker = new WeekPicker('#qweqw', {
+        min: moment().subtract(1, 'M'),
+        max: moment().add(1, 'w'),
         onChange: function(week) {
-            console.log('!!!!!!', week);
+            console.log('-> onchange', week);
         }
+    });
+
+    $('#prev').on('click', function() {
+       picker.prev();
+    });
+
+    $('#next').on('click', function() {
+        picker.next();
+    });
+
+    $('#current').on('click', function() {
+        picker.current();
     });
 </script>
 </body>

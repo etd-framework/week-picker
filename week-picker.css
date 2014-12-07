@@ -8,6 +8,35 @@
     user-select: none;
 }
 
+.weekpicker * {
+    cursor: default;
+}
+
+.weekpicker:after,
+.weekpicker:before {
+    bottom: 100%;
+    left: 15px;
+    border: solid transparent;
+    content: " ";
+    height: 0;
+    width: 0;
+    position: absolute;
+    pointer-events: none;
+}
+
+.weekpicker:after {
+    border-color: rgba(0,0,0,0);
+    border-bottom-color: #fff;
+    border-width: 8px;
+    margin-left: -8px;
+}
+.weekpicker:before {
+    border-color: rgba(0,0,0,0);
+    border-bottom-color: rgba(0,0,0,.25);
+    border-width: 9px;
+    margin-left: -9px;
+}
+
 .weekpicker .controls {
     line-height: 35px;
     text-align: center;
@@ -26,6 +55,17 @@
 .weekpicker .controls .next:hover {
     background: #eee;
     cursor: pointer;
+}
+
+.weekpicker .controls .prev.disabled,
+.weekpicker .controls .next.disabled {
+    color: #999;
+    cursor: not-allowed;
+}
+
+.weekpicker .controls .prev.disabled:hover,
+.weekpicker .controls .next.disabled:hover {
+    background: #fff;
 }
 
 .weekpicker .controls .prev {
@@ -77,6 +117,8 @@
     cursor: pointer;
 }
 
-.weekpicker .weekpicker-days tr.disabled {
+.weekpicker .weekpicker-days tr.disabled,
+.weekpicker .weekpicker-days tr.disabled * {
     cursor: not-allowed;
+    color: #999;
 }

@@ -15,7 +15,7 @@
         if (!moment) {
             throw new Error('WeekPicker requires moment.js to be loaded first!');
         }
-        picker(jquery, moment);
+        root.WeekPicker = picker(jquery, moment);
     }
 
 }(this, function($, moment) {
@@ -37,18 +37,15 @@
         <div class="weekpicker-days"></div>\
     </div>';
 
-    var daysTableTpl = '';
+    var daysTpl = '';
+    var monthsTpl = '';
+    var yearsTpl = '';
 
     // UTILS
 
     function _isCurrentWeek(date, week) {
         return date.year() === week.year() && date.week() === week.week();
     }
-
-    function _isDisabledWeek(timestamp, min, max) {
-        return (min && timestamp <= min.unix()) || (max && timestamp >= max.unix());
-    }
-
 
     // CLASS
 
@@ -60,6 +57,7 @@
         me.x = { // internal properties
             mode: 'isoWeek', // current mode // currently supported only this value
             nr: true, // need render
+            od: false, // is open
             m: [] // current month array
             // date - today date
             // week - first day of current week
@@ -74,7 +72,9 @@
             t: null, // title
             d: null, // days container
             m: null, // months container
-            y: null // years container
+            y: null, // years container
+            pm: null, // prev month
+            nm: null // next month
         };
 
         me.$.el.data('weekpicker', me);
@@ -94,8 +94,6 @@
             me.x.min = me.o.min && me._sof(me.o.min);
             me.x.max = me.o.max && me._sof(me.o.max);
 
-            console.log(me.x);
-
             me._initProxyFn();
             me._renderWidget();
             me._attachEvents();
@@ -113,8 +111,12 @@
             var me = this;
 
             me.$.w = $(widgetTpl).insertAfter(me.$.el);
+
             me.$.t = $('.title', me.$.w);
             me.$.d = $('.weekpicker-days', me.$.w);
+
+            me.$.pm = $('.controls .prev', me.$.w);
+            me.$.nm = $('.controls .next', me.$.w);
 
             me.x.nr = true;
         },
@@ -143,6 +145,11 @@
             return date.startOf(value);
         },
 
+        _isDisabledWeek: function(date) {
+            date = date.unix();
+            return (this.x.min && date <= this.x.min.unix()) || (this.x.max && date >= this.x.max.unix());
+        },
+
         _buildMonth: function() {
             var me = this,
                 weeks = [],
@@ -156,7 +163,7 @@
                     number: start.week(),
                     date: start.clone(),
                     current: _isCurrentWeek(start, me.x.week),
-                    disabled: _isDisabledWeek(start.unix(), me.x.min, me.x.max),
+                    disabled: me._isDisabledWeek(start),
                     days: me._buildWeek(start, me.x.month)
                 });
 
@@ -187,15 +194,24 @@
         },
 
         _renderMonth: function() {
-            console.log('render!');
-            var me = this,
-                weeks = me._buildMonth(),
+            var me = this;
+
+            if(!me.x.od) {
+                me.x.nr = true;
+                return me._update(me.x.week, me.x.week.clone().add(6, 'd')); // FIXME
+            }
+
+            var weeks = me._buildMonth(),
                 table = $('<table>').addClass('table-condensed'),
                 week, days, day, tr, td;
 
+            me.$.pm.removeClass('disabled');
+            me.$.nm.removeClass('disabled');
+
             tr = $('<tr>');
             for(var k = 0; k < 7; k++) {
-                tr.append($('<th>').text(_dayNames[k]));
+                td = $('<th>').text(_dayNames[k]);
+                tr.append(td);
             }
             table.append(tr);
 
@@ -206,11 +222,9 @@
                 days = week.days;
 
                 tr.addClass('week-' + week.number)
-                  .addClass(week.disabled ? 'disabled' : 'enabled');
-
-                week.current && tr.addClass('selected');
-
-                tr.data('i', i);
+                    .addClass(week.disabled ? 'disabled' : 'enabled')
+                    .addClass(week.current ? 'selected' : '')
+                    .data('i', i);
 
                 for(var j = 0, sj = days.length; j < sj; j++) {
                     day = days[j];
@@ -230,31 +244,79 @@
             me.$.d.html(table);
             me.$.t.text(me.x.month.format("MMMM YYYY"));
 
+            if(!me.hasNextMonth()) me.$.nm.addClass('disabled');
+            if(!me.hasPrevMonth()) me.$.pm.addClass('disabled');
+
             me.x.nr = false;
         },
 
         prevMonth: function() {
+            if(this.$.pm.hasClass('disabled')) return;
+
             this.x.month.subtract(1, 'M');
             this._renderMonth();
         },
 
         nextMonth: function() {
+            if(this.$.nm.hasClass('disabled')) return;
+
             this.x.month.add(1, 'M');
             this._renderMonth();
         },
 
-        _select: function($el) {
-            var me = this,
-                index = $el.data('i'),
-                week = me.x.m[index],
-                start, end;
+        prev: function() {
+            var me = this;
 
-            console.log(index, week);
-            if(!week || week.disabled) return;
+            if(me.hasPrev()) {
+                me.x.week.subtract(1, 'w');
 
-            me.x.week = week.date;
-            start = week.days[0].date;
-            end = week.days[6].date;
+                me.x.week.isBefore(me.x.month, 'month') ?
+                    me.prevMonth() :
+                    me._renderMonth();
+            }
+
+        },
+
+        next: function() {
+            var me = this;
+
+            if(me.hasNext()) {
+                me.x.week.add(1, 'w');
+
+                me.x.week.isAfter(me.x.month, 'month') ?
+                    me.nextMonth() :
+                    me._renderMonth();
+            }
+        },
+
+        current: function() {
+            var me = this;
+
+            if(!me._isDisabledWeek(me.x.date)) {
+                me.x.week = me._sof(me.x.date.clone());
+                me.x.month = me._sof(me.x.date.clone(), 'month');
+                me._renderMonth();
+            }
+        },
+
+        hasPrev: function() {
+            return !this._isDisabledWeek(this.x.week.clone().subtract(1, 'w'));
+        },
+
+        hasNext: function() {
+            return !this._isDisabledWeek(this.x.week.clone().add(1, 'w'));
+        },
+
+        hasPrevMonth: function() {
+            return !this._isDisabledWeek(this.x.month.clone().subtract(1, 'd'));
+        },
+
+        hasNextMonth: function() {
+            return !this._isDisabledWeek(this.x.month.clone().add(1, 'M'));
+        },
+
+        _update: function(start, end) {
+            var me = this;
 
             if(me.$.el.is('input')) {
                 me.$.el.val(start.format("DD/MM/YYYY") + " - " + end.format("DD/MM/YYYY"));
@@ -266,6 +328,17 @@
                     end: end
                 });
             }
+        },
+
+        _select: function($el) {
+            var me = this,
+                index = $el.data('i'),
+                week = me.x.m[index];
+
+            if(!week || week.disabled) return;
+
+            me.x.week = week.date;
+            me._update(week.days[0].date, week.days[6].date);
 
             me.x.nr = true;
             me.hide();
@@ -292,20 +365,15 @@
                 })
                 .show();
 
+            me.x.od = true;
             $('body').one('click', me.hide);
         },
 
         hide: function() {
             this.$.w.hide();
+            this.x.od = false;
         }
     };
 
-    $.fn.weekpicker = function (options) {
-        return this.each(function () {
-            new WeekPicker(this, options);
-        });
-    };
-
     return WeekPicker;
-
 }));
