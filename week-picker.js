@@ -45,7 +45,7 @@
                 number: date.week(),
                 days: _buildWeek(date.clone(), month),
                 current: date.week() === week,
-                disabled: (dweek ? date.unix() >= dweek : false)
+                //disabled: (dweek ? date.unix() >= dweek : false)
             });
 
             date.add(1, "week");
