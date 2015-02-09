@@ -165,6 +165,8 @@
             }
             table.append(tr);
 
+
+
             for(var i = 0, si = weeks.length; i < si; i++) {
                 tr = $('<tr>');
 
