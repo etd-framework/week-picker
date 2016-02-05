@@ -174,7 +174,7 @@
                 days = week.days;
 
                 tr.addClass('week-' + week.number)
-                  .addClass(week.disabled ? 'disabled' : 'enabled');
+                    .addClass(week.disabled ? 'disabled' : 'enabled');
 
                 if(week.current) {
                     tr.addClass('selected');
@@ -236,6 +236,7 @@
             start = days[0].date;
             end = days[6].date;
 
+            this._currentDate = start;
             this._currentWeek = start.week();
             this._renderMonth();
 
@@ -266,7 +267,7 @@
                 this._renderMonth();
             }
 
-             var position = this.$el.position();
+            var position = this.$el.position();
 
             this
                 .$picker
@@ -281,6 +282,10 @@
 
         hide: function() {
             this.$picker.hide();
+        },
+
+        date: function() {
+            return this._currentDate.clone();
         }
     };
 
