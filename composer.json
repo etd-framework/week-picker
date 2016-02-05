@@ -9,6 +9,6 @@
   ],
   "require": {
     "etdsolutions/jquery": "~1.0,~2.0",
-    "etdsolutions/moment": "~2.0",
+    "etdsolutions/moment": "~2.0"
   }
 }
