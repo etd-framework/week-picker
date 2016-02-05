@@ -19,7 +19,7 @@
     }
 
 }(this, function($, moment) {
-    var _dayNames = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
+    var _dayNames = ["Lu", "Ma", "Me", "Je", "Ve", "Sa", "Di"],
         _defaults = {
             initialDate: moment(),
             endDate: null,
