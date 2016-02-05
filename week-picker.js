@@ -266,13 +266,13 @@
                 this._renderMonth();
             }
 
-            var offset = this.$el.offset();
+             var position = this.$el.position();
 
             this
                 .$picker
                 .css({
-                    top: offset.top + this.$el.outerHeight() + 2,
-                    left: offset.left
+                    top: position.top + this.$el.outerHeight() + 2,
+                    left: position.left
                 })
                 .show();
 
