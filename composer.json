@@ -1,0 +1,14 @@
+{
+  "name": "etdsolutions/week-picker",
+  "description": "A multi month week picker calendar",
+  "authors": [
+    {
+      "name": "Morshed Alam",
+      "email": "morshed201@gmail.com"
+    }
+  ],
+  "require": {
+    "etdsolutions/jquery": "~1.0,~2.0",
+    "etdsolutions/moment": "~2.0",
+  }
+}
