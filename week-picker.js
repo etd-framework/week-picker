@@ -166,8 +166,6 @@
             }
             table.append(tr);
 
-
-
             for(var i = 0, si = weeks.length; i < si; i++) {
                 tr = $('<tr>');
 
@@ -268,9 +266,7 @@
         show: function(e) {
             e && e.stopPropagation();
 
-            if(!this._rendered) {
-                this._renderMonth();
-            }
+            this._renderMonth();
 
             var position = this.$el.position();
 
