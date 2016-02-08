@@ -22,6 +22,7 @@
     var _dayNames = ["Lu", "Ma", "Me", "Je", "Ve", "Sa", "Di"],
         _defaults = {
             initialDate: moment(),
+            valueFormat: null,
             endDate: null,
             onChange: null
         };
@@ -241,7 +242,11 @@
             this._renderMonth();
 
             if(this.$el.is('input')) {
-                this.$el.val(start.format("DD/MM/YYYY") + " - " + end.format("DD/MM/YYYY"));
+                if (this.options.valueFormat instanceof Function) {
+                    this.$el.val(this.options.valueFormat.apply(this, [start, end]));
+                } else {
+                    this.$el.val(start.format("DD/MM/YYYY") + " - " + end.format("DD/MM/YYYY"));
+                }
             }
 
             if(this.options.onChange instanceof Function) {
