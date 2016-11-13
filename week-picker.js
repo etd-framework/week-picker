@@ -100,6 +100,7 @@
 
             this._initialDate = _clearTime(this.options.initialDate || moment());
             this._currentWeek = this._initialDate.week();
+            this._currentYear = this._initialDate.year();
             this._monthDate = this._initialDate.clone();
             this._endDate = this.options.endDate ? this.options.endDate.isoWeek() : null;
             this._setDate(this._initialDate);
@@ -237,6 +238,7 @@
 
             this._currentDate = start;
             this._currentWeek = start.week();
+            this._currentYear = start.year();
             this._renderMonth();
 
             if(this.$el.is('input')) {
@@ -287,6 +289,14 @@
 
         date: function() {
             return this._currentDate.clone();
+        },
+
+        week: function() {
+            return this._currentWeek;
+        },
+
+        year: function() {
+            return this._currentYear;
         }
     };
 
