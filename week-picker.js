@@ -255,6 +255,8 @@
                     end: end
                 });
             }
+            
+            this.$el.trigger('change', [start, end, this]);
 
             this.hide();
         },
