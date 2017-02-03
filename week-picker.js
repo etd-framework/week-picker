@@ -24,7 +24,8 @@
             initialDate: moment(),
             valueFormat: null,
             endDate: null,
-            onChange: null
+            onChange: null,
+            showWeekNumber: false
         };
 
     // UTILS
@@ -162,6 +163,9 @@
                 week, days, day, tr, td;
 
             tr = $('<tr>');
+            if(this.options.showWeekNumber) {
+                tr.append($('<th>').text('S'));
+            }
             for(var k = 0; k < 7; k++) {
                 tr.append($('<th>').text(_dayNames[k]));
             }
@@ -181,6 +185,10 @@
                 }
 
                 tr.data('days', days);
+
+                if(this.options.showWeekNumber) {
+                    tr.append($('<td>').text(week.number));
+                }
 
                 for(var j = 0, sj = days.length; j < sj; j++) {
                     day = days[j];
