@@ -61,6 +61,10 @@
     color: #999;
 }
 
+.weekpicker .weekpicker-days td.weekpicker-week, .weekpicker .weekpicker-days th.weekpicker-week {
+    font-weight: bold;
+}
+
 .weekpicker .weekpicker-days tr.selected td {
     background-color: #428bca!important;
     color: #fff;
