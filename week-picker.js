@@ -100,6 +100,7 @@
                 .proxy('_next');
 
             this._initialDate = _clearTime(this.options.initialDate || moment());
+            this._currentDate = this._initialDate.clone();
             this._currentWeek = this._initialDate.week();
             this._currentYear = this._initialDate.year();
             this._monthDate = this._initialDate.clone();
