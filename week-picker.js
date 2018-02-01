@@ -100,7 +100,6 @@
                 .proxy('_next');
 
             this._initialDate = _clearTime(this.options.initialDate || moment());
-            this._currentDate = this._initialDate.clone();
             this._currentWeek = this._initialDate.week();
             this._currentYear = this._initialDate.year();
             this._monthDate = this._initialDate.clone();
@@ -117,8 +116,7 @@
         },
 
         _setDate: function(date) {
-            date = _clearTime(date.clone().date(1).startOf('isoWeek'));
-
+            date = _clearTime(date.clone());
             this._currentDate = date;
             this._currentMonth = this._monthDate.month();
         },
@@ -299,6 +297,7 @@
         },
 
         date: function() {
+            console.log(this._currentDate.clone());
             return this._currentDate.clone();
         },
 
